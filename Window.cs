@@ -31,6 +31,14 @@ namespace _4DModLoader_Installer
 
         private HashSet<Control> controlsToMove = new HashSet<Control>();
 
+#if DEBUG
+        public const string serverPHP = "http://localhost:3000";
+        public const string serverFiles = "http://127.0.0.1:5500";
+#else
+        public const string serverPHP = "https://www.4dmodding.me";
+        public const string serverFiles = "https://www.4dmodding.me";
+#endif
+
         public Window()
         {
             InitializeComponent();
@@ -38,7 +46,23 @@ namespace _4DModLoader_Installer
 
             controlsToMove.Add(this);
         }
+        public static void CreateDirectories(string path, string pathPrefix)
+        {
+            var directories = path.Split('/', '\\');
+            var currentPath = "";
+            foreach (var directory in directories)
+            {
+                if (!string.IsNullOrWhiteSpace(Path.GetExtension(directory))) break; // a file ig
 
+                if (string.IsNullOrWhiteSpace(currentPath))
+                    currentPath = directory;
+                else
+                    currentPath = currentPath + "/" + directory;
+                
+                if (!Directory.Exists(Path.Combine(pathPrefix, currentPath)))
+                    Directory.CreateDirectory(Path.Combine(pathPrefix, currentPath));
+            }
+        }
         void DownloadVer(string gameVer, string modLoaderVer, string gamePath)
         {
             if (!Directory.Exists(gamePath) || !(File.Exists(Path.Combine(gamePath, "4D Miner.exe")) || File.Exists(Path.Combine(gamePath, "4DM.exe"))))
@@ -54,7 +78,7 @@ namespace _4DModLoader_Installer
                     { "modLoaderVer", modLoaderVer }
                 };
 
-                byte[] responseBytes = client.UploadValues("https://www.4dmodding.me/updater/getFiles.php", "POST", formData);
+                byte[] responseBytes = client.UploadValues($"{serverPHP}/updater/getFiles.php", "POST", formData);
                 string response = System.Text.Encoding.UTF8.GetString(responseBytes);
 
                 if (response == "WRONG_GAME_VERSION" || response == "WRONG_MODLOADER_VERSION")
@@ -64,20 +88,22 @@ namespace _4DModLoader_Installer
                 List<(byte[] data, string path)> files = new List<(byte[] data, string path)>();
                 foreach (string file in json.versionFiles)
                 {
-                    string fileName = Path.GetFileName(file);
+                    string fileName = file.Replace($"{serverFiles}/core-files/{gameVer}/{modLoaderVer}/", "").Replace($"{serverFiles}/core-files/", "");
 
                     files.Add((client.DownloadData(file), Path.Combine(gamePath, fileName)));
                 }
 
-                files.Add((client.DownloadData("https://www.4dmodding.me/core-files/4D Miner.exe"), Path.Combine(gamePath, "4D Miner.exe")));
+                files.Add((client.DownloadData($"{serverFiles}/core-files/4D Miner.exe"), Path.Combine(gamePath, "4D Miner.exe")));
 
                 // rename original 4D Miner.exe into 4DM.exe
                 if (!File.Exists(Path.Combine(gamePath, "4DM.exe")))
                     File.Move(Path.Combine(gamePath, "4D Miner.exe"), Path.Combine(gamePath, "4DM.exe"));
 
                 foreach ((byte[] data, string path) file in files)
+                {
+                    CreateDirectories(file.path.Remove(0, gamePath.Length + 1), gamePath);
                     File.WriteAllBytes(file.path, file.data);
-
+                }
                 MessageBox.Show("Done!", "Status", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
@@ -91,7 +117,7 @@ namespace _4DModLoader_Installer
             gameVer.Items.Clear();
 
             using (var client = new WebClient())
-                versions = client.DownloadString("https://www.4dmodding.me/core-files/versions.json");
+                versions = client.DownloadString($"{serverFiles}/core-files/versions.json");
 
             versionsJson = JsonConvert.DeserializeObject<VersionsObject>(versions);
 
