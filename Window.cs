@@ -32,11 +32,11 @@ namespace _4DModLoader_Installer
         private HashSet<Control> controlsToMove = new HashSet<Control>();
 
 #if DEBUG
-        public const string serverPHP = "http://localhost:3000";
-        public const string serverFiles = "http://127.0.0.1:5500";
+        public const string serverPHP = "http://localhost:3000/";
+        public const string serverFiles = "http://127.0.0.1:5500/";
 #else
-        public const string serverPHP = "https://www.4dmodding.me";
-        public const string serverFiles = "https://www.4dmodding.me";
+        public const string serverPHP = "https://www.4dmodding.me/";
+        public const string serverFiles = "https://www.4dmodding.me/";
 #endif
 
         public Window()
@@ -78,7 +78,7 @@ namespace _4DModLoader_Installer
                     { "modLoaderVer", modLoaderVer }
                 };
 
-                byte[] responseBytes = client.UploadValues($"{serverPHP}/updater/getFiles.php", "POST", formData);
+                byte[] responseBytes = client.UploadValues($"{serverPHP}updater/getFiles.php", "POST", formData);
                 string response = System.Text.Encoding.UTF8.GetString(responseBytes);
 
                 if (response == "WRONG_GAME_VERSION" || response == "WRONG_MODLOADER_VERSION")
@@ -88,12 +88,12 @@ namespace _4DModLoader_Installer
                 List<(byte[] data, string path)> files = new List<(byte[] data, string path)>();
                 foreach (string file in json.versionFiles)
                 {
-                    string fileName = file.Replace($"{serverFiles}/core-files/{gameVer}/{modLoaderVer}/", "").Replace($"{serverFiles}/core-files/", "");
+                    string fileName = file.Replace($"{serverFiles}core-files/{gameVer}/{modLoaderVer}/", "").Replace($"{serverFiles}core-files/", "");
 
                     files.Add((client.DownloadData(file), Path.Combine(gamePath, fileName)));
                 }
 
-                files.Add((client.DownloadData($"{serverFiles}/core-files/4D Miner.exe"), Path.Combine(gamePath, "4D Miner.exe")));
+                files.Add((client.DownloadData($"{serverFiles}core-files/4D Miner.exe"), Path.Combine(gamePath, "4D Miner.exe")));
 
                 // rename original 4D Miner.exe into 4DM.exe
                 if (!File.Exists(Path.Combine(gamePath, "4DM.exe")))
@@ -117,7 +117,7 @@ namespace _4DModLoader_Installer
             gameVer.Items.Clear();
 
             using (var client = new WebClient())
-                versions = client.DownloadString($"{serverFiles}/core-files/versions.json");
+                versions = client.DownloadString($"{serverFiles}core-files/versions.json");
 
             versionsJson = JsonConvert.DeserializeObject<VersionsObject>(versions);
 
