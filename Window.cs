@@ -35,8 +35,8 @@ namespace _4DModLoader_Installer
         public const string serverPHP = "http://localhost:3000/";
         public const string serverFiles = "http://127.0.0.1:5500/";
 #else
-        public const string serverPHP = "https://www.4dmodding.me/";
-        public const string serverFiles = "https://www.4dmodding.me/";
+        public const string serverPHP = "https://www.4d-modding.com/";
+        public const string serverFiles = "https://www.4d-modding.com/";
 #endif
 
         public Window()
@@ -88,9 +88,18 @@ namespace _4DModLoader_Installer
                 List<(byte[] data, string path)> files = new List<(byte[] data, string path)>();
                 foreach (string file in json.versionFiles)
                 {
-                    string fileName = file.Replace($"{serverFiles}core-files/{gameVer}/{modLoaderVer}/", "").Replace($"{serverFiles}core-files/", "");
+                    string fileName = file;
+                    string pathThing = $"{gameVer}/{modLoaderVer}/";
 
-                    files.Add((client.DownloadData(file), Path.Combine(gamePath, fileName)));
+					if (fileName.Contains("core-files/"))
+						fileName = fileName.Remove(0, fileName.IndexOf("core-files/") + "core-files/".Length);
+
+                    if (fileName.Contains(pathThing))
+                        fileName = fileName.Remove(0, fileName.IndexOf(pathThing) + pathThing.Length);
+
+                    fileName = fileName.Trim();
+
+					files.Add((client.DownloadData(file), Path.Combine(gamePath, fileName)));
                 }
 
                 files.Add((client.DownloadData($"{serverFiles}core-files/4D Miner.exe"), Path.Combine(gamePath, "4D Miner.exe")));
