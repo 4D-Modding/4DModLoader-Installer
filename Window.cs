@@ -35,8 +35,8 @@ namespace _4DModLoader_Installer
         public const string serverPHP = "http://localhost:3000/";
         public const string serverFiles = "http://127.0.0.1:5500/";
 #else
-        public const string serverPHP = "https://www.4d-modding.com/";
-        public const string serverFiles = "https://www.4d-modding.com/";
+        public const string serverPHP = "https://4d-modding.com/";
+        public const string serverFiles = "https://4d-modding.com/";
 #endif
 
         public Window()
@@ -46,23 +46,36 @@ namespace _4DModLoader_Installer
 
             controlsToMove.Add(this);
         }
+        // translated directly from the modloader c++ version of the func this time (i know this is not good but i wrote this ages ago and it clearly works better than the old code that was used here)
         public static void CreateDirectories(string path, string pathPrefix)
         {
-            var directories = path.Split('/', '\\');
-            var currentPath = "";
-            foreach (var directory in directories)
-            {
-                if (!string.IsNullOrWhiteSpace(Path.GetExtension(directory))) break; // a file ig
+			string normalizedPath = path.Replace('\\', '/'); // but also added this just to make sure it works
+			string dirs = normalizedPath;
+			string currentPath = string.Empty;
+			int pos = 0;
 
-                if (string.IsNullOrWhiteSpace(currentPath))
-                    currentPath = directory;
-                else
-                    currentPath = currentPath + "/" + directory;
-                
-                if (!Directory.Exists(Path.Combine(pathPrefix, currentPath)))
-                    Directory.CreateDirectory(Path.Combine(pathPrefix, currentPath));
-            }
-        }
+			while ((pos = dirs.IndexOf('/')) != -1)
+			{
+				string directory = dirs.Substring(0, pos);
+				dirs = dirs.Remove(0, pos + 1);
+
+				if (!string.IsNullOrWhiteSpace(directory) && !Path.HasExtension(directory))
+				{
+                    if (string.IsNullOrWhiteSpace(directory))
+                        currentPath = directory;
+                    else
+						currentPath = Path.Combine(currentPath, directory);
+
+                    var fullPath = Path.Combine(pathPrefix, currentPath);
+					if (!Directory.Exists(fullPath))
+						Directory.CreateDirectory(fullPath);
+				}
+				else
+				{
+					break;
+				}
+			}
+		}
         void DownloadVer(string gameVer, string modLoaderVer, string gamePath)
         {
             if (!Directory.Exists(gamePath) || !(File.Exists(Path.Combine(gamePath, "4D Miner.exe")) || File.Exists(Path.Combine(gamePath, "4DM.exe"))))
@@ -189,8 +202,8 @@ namespace _4DModLoader_Installer
                 gamePath.Text = dialog.FileName;
             }
         }
-    }
-    public class VersionsObject
+	}
+	public class VersionsObject
     {
         public List<string> Libs { get; set; }
         public Dictionary<string, List<string>> Versions { get; set; }
